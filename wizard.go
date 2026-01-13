@@ -5,34 +5,27 @@ import (
 	"github.com/tinywasm/fmt"
 )
 
-// Step represents a single interaction or execution unit in the wizard
-type Step interface {
-	// Label returns the prompt text for the UI (e.g., "Project Name")
+// orchestratorStep is the internal interface used by the Wizard.
+// Both the provided Step struct and any custom implementation can satisfy this.
+type orchestratorStep interface {
 	Label() string
-
-	// DefaultValue returns a suggestion based on the current context
 	DefaultValue(ctx *context.Context) string
-
-	// OnInput executes the step logic.
-	OnInput(input string, ctx *context.Context) (newCtx *context.Context, continueFlow bool, err error)
+	OnInput(input string, ctx *context.Context) (bool, error)
 }
 
-// Module represents a pluggable component that provides a sequence of steps
+// Module represents a pluggable component that provides a sequence of steps.
 type Module interface {
-	// Name returns the module identifier
 	Name() string
-
-	// GetSteps returns the sequence of steps this module requires.
-	GetSteps() []any
+	GetSteps() []any // Should return []orchestratorStep compatible items
 }
 
-// Wizard orchestrates the execution of multiple Steps
+// Wizard orchestrates the execution of multiple Steps.
 type Wizard struct {
 	log func(message ...any)
 
 	// Orchestration state
 	ctx            *context.Context
-	steps          []Step
+	steps          []orchestratorStep
 	currentStepIdx int
 
 	// TUI state
@@ -44,12 +37,16 @@ type Wizard struct {
 	onComplete func()
 }
 
-// New creates a generic wizard with the given steps
-func New(onComplete func(), steps ...Step) *Wizard {
+// New creates a generic wizard with the given steps.
+func New(onComplete func(), steps ...*Step) *Wizard {
+	iSteps := make([]orchestratorStep, len(steps))
+	for i, s := range steps {
+		iSteps[i] = s
+	}
 	w := &Wizard{
 		log:            func(...any) {},
 		ctx:            context.Background(),
-		steps:          steps,
+		steps:          iSteps,
 		currentStepIdx: 0,
 		onComplete:     onComplete,
 		stepMessage:    "WIZARD",
@@ -76,7 +73,7 @@ func (w *Wizard) initCurrentStep() {
 	step := w.steps[w.currentStepIdx]
 	w.label = step.Label()
 	w.currentValue = step.DefaultValue(w.ctx)
-	w.stepMessage = "STEP " + fmt.Convert(w.label).PathBase().String() // Simple header
+	w.stepMessage = "STEP " + fmt.Convert(w.label).PathBase().String()
 	w.waitingForUser = true
 }
 
@@ -93,18 +90,19 @@ func (w *Wizard) Change(newValue string) {
 	}
 
 	step := w.steps[w.currentStepIdx]
-	newCtx, continueFlow, err := step.OnInput(newValue, w.ctx)
+	continueFlow, err := step.OnInput(newValue, w.ctx)
 
 	if err != nil {
 		w.log("Error: " + err.Error())
-		if !continueFlow {
-			// If cannot continue, stay on current step (user must retry)
-			return
-		}
-		// If continueFlow is true, we log error but proceed
+		// If error occurs, we stay on the current step unless we want specific behaviors.
+		// For now, any error blocks progress.
+		return
 	}
 
-	w.ctx = newCtx
+	if !continueFlow {
+		// Step logic decided not to proceed yet (e.g. waiting for more input)
+		return
+	}
 
 	// Move to next step
 	w.currentStepIdx++

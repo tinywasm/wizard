@@ -1,4 +1,4 @@
-github.com/tinywasm/context v0.0.8 h1:1AorfLJgcXXIDH8IPS7U+XhQfVqu7jUCH1zhSI1HGto=
-github.com/tinywasm/context v0.0.8/go.mod h1:yhyr/hWK9ZCZH6cifj1nRX6zVqGmyWdy+ljzxkTshBo=
+github.com/tinywasm/context v0.0.9 h1:am6F2ECSLkujsT+MGNmjErYXNBSi88ay3nhpiFucqFk=
+github.com/tinywasm/context v0.0.9/go.mod h1:yhyr/hWK9ZCZH6cifj1nRX6zVqGmyWdy+ljzxkTshBo=
 github.com/tinywasm/fmt v0.14.0 h1:Z3mudKuoxRPB97VEisk9pkV2tdvt2YxgJygPJEcPeo4=
 github.com/tinywasm/fmt v0.14.0/go.mod h1:L2GCAi6asgytPV6TVvGrRq5Ml+DkUt1Ijo5i/2J1jOY=

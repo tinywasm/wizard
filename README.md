@@ -6,42 +6,45 @@
 A modular, pluggable wizard orchestrator for TinyGo applications.
 
 ## LLM Context / Core Logic
-The library orchestrates a sequence of `Step` interfaces. It manages state via `tinywasm/context` and handles flow control through a completion callback.
+The library orchestrates a sequence of `Step` struct helpers. It manages state via a **mutable** `tinywasm/context`.
 
-### Interfaces
+### Steps
 ```go
-type Step interface {
-    Label() string                                                                 // Prompt text
-    DefaultValue(ctx *context.Context) string                                     // UI Suggestion
-    OnInput(in string, ctx *context.Context) (*context.Context, bool, error)      // Logic + next state
+type Step struct {
+    LabelText  string
+    DefaultFn  func(ctx *context.Context) string
+    OnInputFn  func(input string, ctx *context.Context) (continueFlow bool, err error)
 }
 ```
 
 ### Flow Control
-- **New(onComplete func(), steps ...Step)**: Initializes orchestration.
+- **New(onComplete func(), steps ...*Step)**: Initializes orchestration.
 - **Change(input)**: Executes `OnInput` for the current step.
-- **continueFlow (bool)**: If `true`, the wizard proceeds even if `error != nil` (soft failure). If `false`, it stays on the same step (hard failure).
+- If `error != nil`, the wizard **stays on the current step**.
+- If `error == nil` and `continueFlow == true`, the wizard **advances to the next step**.
 
 ## Features
 - **Zero dynamic allocations** (fixed capacity context).
-- **Duck-typing compatible**: Designed to be implemented by external modules without direct package dependencies.
+- **Mutable State**: Steps modify the context directly via `ctx.Set()`.
+- **Easy Literals**: Define steps as simple structs without boilerplate.
 - **TUI-ready**: Implements `Handler` and `Loggable` patterns.
 
 ## Usage
 ```go
-// 1. Implement a Step
-type NameStep struct{}
-func (s *NameStep) Label() string { return "Project Name" }
-func (s *NameStep) DefaultValue(ctx *context.Context) string { return "my-app" }
-func (s *NameStep) OnInput(in string, ctx *context.Context) (*context.Context, bool, error) {
-    return context.WithValue(ctx, "project_name", in)
+// 1. Create steps inline using the exported Step struct
+steps := []*wizard.Step{
+    {
+        LabelText: "Project Name",
+        DefaultFn: func(ctx *context.Context) string { return "my-app" },
+        OnInputFn: func(in string, ctx *context.Context) (bool, error) {
+            if in == "" { return false, nil }
+            err := ctx.Set("name", in) // Mutate context in-place
+            return true, err
+        },
+    },
 }
 
-// 2. Initialize and Run
-wiz := wizard.New(func() {
-    println("Wizard finished!")
-}, &NameStep{})
-
-// 3. Handle data updates
+// 2. Run wizard
+wiz := wizard.New(func() { println("Done!") }, steps...)
 wiz.Change("new-project")
 ```

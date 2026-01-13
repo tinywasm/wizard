@@ -7,37 +7,25 @@ import (
 	"github.com/tinywasm/fmt"
 )
 
-type MockStep struct {
-	label string
-	def   string
-	onIn  func(input string, ctx *context.Context) (*context.Context, bool, error)
-}
-
-func (m *MockStep) Label() string                            { return m.label }
-func (m *MockStep) DefaultValue(ctx *context.Context) string { return m.def }
-func (m *MockStep) OnInput(input string, ctx *context.Context) (*context.Context, bool, error) {
-	return m.onIn(input, ctx)
-}
-
 func TestWizardFlow(t *testing.T) {
 	completed := false
 	onComplete := func() { completed = true }
 
-	step1 := &MockStep{
-		label: "Project Name",
-		def:   "my-project",
-		onIn: func(input string, ctx *context.Context) (*context.Context, bool, error) {
-			c, err := context.WithValue(ctx, "name", input)
-			return c, true, err
+	step1 := &Step{
+		LabelText: "Project Name",
+		DefaultFn: func(ctx *context.Context) string { return "my-project" },
+		OnInputFn: func(input string, ctx *context.Context) (bool, error) {
+			err := ctx.Set("name", input)
+			return true, err
 		},
 	}
 
-	step2 := &MockStep{
-		label: "Location",
-		def:   "./",
-		onIn: func(input string, ctx *context.Context) (*context.Context, bool, error) {
-			c, err := context.WithValue(ctx, "path", input)
-			return c, true, err
+	step2 := &Step{
+		LabelText: "Location",
+		DefaultFn: func(ctx *context.Context) string { return "./" },
+		OnInputFn: func(input string, ctx *context.Context) (bool, error) {
+			err := ctx.Set("path", input)
+			return true, err
 		},
 	}
 
@@ -75,7 +63,7 @@ func TestWizardFlow(t *testing.T) {
 		t.Error("expected WaitingForUser to be false after completion")
 	}
 
-	// Verify context values
+	// Verify context values (directly from mutable ctx)
 	if w.ctx.Value("name") != "test-app" {
 		t.Errorf("expected context name test-app, got %s", w.ctx.Value("name"))
 	}
@@ -85,30 +73,23 @@ func TestWizardFlow(t *testing.T) {
 }
 
 func TestWizardErrorFlow(t *testing.T) {
-	step1 := &MockStep{
-		label: "Hard Error Step",
-		onIn: func(input string, ctx *context.Context) (*context.Context, bool, error) {
-			return ctx, false, fmt.Err("critical failure")
+	step1 := &Step{
+		LabelText: "Hard Error Step",
+		OnInputFn: func(input string, ctx *context.Context) (bool, error) {
+			return false, fmt.Err("critical failure")
 		},
 	}
 
-	step2 := &MockStep{
-		label: "Soft Error Step",
-		onIn: func(input string, ctx *context.Context) (*context.Context, bool, error) {
-			return ctx, true, fmt.Err("minor warning")
+	step2 := &Step{
+		LabelText: "Success Step",
+		OnInputFn: func(input string, ctx *context.Context) (bool, error) {
+			return true, nil
 		},
 	}
 
-	step3 := &MockStep{
-		label: "Success Step",
-		onIn: func(input string, ctx *context.Context) (*context.Context, bool, error) {
-			return ctx, true, nil
-		},
-	}
+	w := New(nil, step1, step2)
 
-	w := New(nil, step1, step2, step3)
-
-	// 1. Test Hard Error (continueFlow = false)
+	// 1. Test Error = stay on step
 	w.Change("trigger crash")
 	if w.Label() != "Hard Error Step" {
 		t.Errorf("expected to stay on Hard Error Step, got %s", w.Label())
@@ -117,21 +98,15 @@ func TestWizardErrorFlow(t *testing.T) {
 		t.Errorf("expected index 0, got %d", w.currentStepIdx)
 	}
 
-	// For step 1 to pass, we manually "fix" it for the next Change
-	step1.onIn = func(input string, ctx *context.Context) (*context.Context, bool, error) {
-		return ctx, true, nil
+	// 2. Fix step1 logic and advance
+	step1.OnInputFn = func(input string, ctx *context.Context) (bool, error) {
+		return true, nil
 	}
 	w.Change("ok")
-	if w.Label() != "Soft Error Step" {
-		t.Errorf("expected to move to Soft Error Step, got %s", w.Label())
-	}
-
-	// 2. Test Soft Error (continueFlow = true)
-	w.Change("trigger warning")
 	if w.Label() != "Success Step" {
-		t.Errorf("expected to move to Success Step despite warning, got %s", w.Label())
+		t.Errorf("expected to move to Success Step, got %s", w.Label())
 	}
-	if w.currentStepIdx != 2 {
-		t.Errorf("expected index 2, got %d", w.currentStepIdx)
+	if w.currentStepIdx != 1 {
+		t.Errorf("expected index 1, got %d", w.currentStepIdx)
 	}
 }
