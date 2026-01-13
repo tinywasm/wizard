@@ -27,6 +27,9 @@ func (w *Wizard) Change(newValue string) {
 		return
 	}
 
+	// Before advancing, log the user's input to preserve history
+	w.log("✓ " + w.label + ": " + newValue)
+
 	// Move to next step
 	w.currentStepIdx++
 	w.initCurrentStep()
