@@ -1,9 +1,8 @@
 package wizard
 
 import (
-	"path/filepath"
-
 	"github.com/tinywasm/context"
+	"github.com/tinywasm/fmt"
 )
 
 // Step represents a single interaction or execution unit in the wizard
@@ -46,7 +45,7 @@ type Wizard struct {
 }
 
 // New creates a generic wizard with the given steps
-func New(steps []Step, onComplete func()) *Wizard {
+func New(onComplete func(), steps ...Step) *Wizard {
 	w := &Wizard{
 		log:            func(...any) {},
 		ctx:            context.Background(),
@@ -77,7 +76,7 @@ func (w *Wizard) initCurrentStep() {
 	step := w.steps[w.currentStepIdx]
 	w.label = step.Label()
 	w.currentValue = step.DefaultValue(w.ctx)
-	w.stepMessage = "STEP " + filepath.Base(w.label) // Simple header
+	w.stepMessage = "STEP " + fmt.Convert(w.label).PathBase().String() // Simple header
 	w.waitingForUser = true
 }
 
