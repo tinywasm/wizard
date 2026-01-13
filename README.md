@@ -26,3 +26,22 @@ type Step interface {
 - **Zero dynamic allocations** (fixed capacity context).
 - **Duck-typing compatible**: Designed to be implemented by external modules without direct package dependencies.
 - **TUI-ready**: Implements `Handler` and `Loggable` patterns.
+
+## Usage
+```go
+// 1. Implement a Step
+type NameStep struct{}
+func (s *NameStep) Label() string { return "Project Name" }
+func (s *NameStep) DefaultValue(ctx *context.Context) string { return "my-app" }
+func (s *NameStep) OnInput(in string, ctx *context.Context) (*context.Context, bool, error) {
+    return context.WithValue(ctx, "project_name", in)
+}
+
+// 2. Initialize and Run
+wiz := wizard.New(func() {
+    println("Wizard finished!")
+}, &NameStep{})
+
+// 3. Handle data updates
+wiz.Change("new-project")
+```
