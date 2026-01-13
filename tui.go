@@ -17,13 +17,10 @@ func (w *Wizard) Change(newValue string) {
 
 	if err != nil {
 		w.log("Error: " + err.Error())
-		// If error occurs, we stay on the current step unless we want specific behaviors.
-		// For now, any error blocks progress.
 		return
 	}
 
 	if !continueFlow {
-		// Step logic decided not to proceed yet (e.g. waiting for more input)
 		return
 	}
 
@@ -36,7 +33,9 @@ func (w *Wizard) Change(newValue string) {
 }
 
 // Loggable implementation
-func (w *Wizard) SetLog(f func(message ...any)) { w.log = f }
+func (w *Wizard) SetLog(f func(message ...any)) {
+	w.log = f
+}
 
 // StreamingLoggable implementation
 func (w *Wizard) AlwaysShowAllLogs() bool { return true }
