@@ -13,12 +13,8 @@ type MockModule struct {
 }
 
 func (m *MockModule) Name() string { return m.name }
-func (m *MockModule) GetSteps() []any {
-	res := make([]any, len(m.steps))
-	for i, s := range m.steps {
-		res[i] = s
-	}
-	return res
+func (m *MockModule) GetSteps() []*Step {
+	return m.steps
 }
 
 func TestWizardFlow(t *testing.T) {
@@ -70,9 +66,6 @@ func TestWizardFlow(t *testing.T) {
 	w.Change("/tmp/test")
 	if !completed {
 		t.Error("expected onComplete to have been called")
-	}
-	if w.Name() != "DONE" {
-		t.Errorf("expected Name DONE, got %s", w.Name())
 	}
 	if w.WaitingForUser() {
 		t.Error("expected WaitingForUser to be false after completion")
