@@ -18,7 +18,7 @@ type Step struct {
 ```
 
 ### Flow Control
-- **New(onComplete func(), steps ...*Step)**: Initializes orchestration.
+- **New(onComplete func(ctx *context.Context), modules ...Module)**: Initializes orchestration.
 - **Change(input)**: Executes `OnInput` for the current step.
 - If `error != nil`, the wizard **stays on the current step**.
 - If `error == nil` and `continueFlow == true`, the wizard **advances to the next step**.
@@ -30,8 +30,22 @@ type Step struct {
 - **TUI-ready**: Implements `Handler` and `Loggable` patterns.
 
 ## Usage
+
 ```go
-// 1. Create steps inline using the exported Step struct
+// 1. Define a Module
+type MyModule struct {
+    Steps []*wizard.Step
+}
+func (m MyModule) Name() string { return "My Module" }
+func (m MyModule) GetSteps() []any {
+    steps := make([]any, len(m.Steps))
+    for i, s := range m.Steps {
+        steps[i] = s
+    }
+    return steps
+}
+
+// 2. Create steps
 steps := []*wizard.Step{
     {
         LabelText: "Project Name",
@@ -44,7 +58,7 @@ steps := []*wizard.Step{
     },
 }
 
-// 2. Run wizard
-wiz := wizard.New(func() { println("Done!") }, steps...)
+// 3. Run wizard
+wiz := wizard.New(func(ctx *context.Context) { println("Done!") }, &MyModule{Steps: steps})
 wiz.Change("new-project")
 ```
