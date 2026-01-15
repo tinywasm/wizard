@@ -34,15 +34,20 @@ type Wizard struct {
 	currentValue   string
 	waitingForUser bool
 
-	onComplete func()
+	onComplete func(ctx *context.Context)
 }
 
-// New creates a generic wizard with the given steps.
-func New(onComplete func(), steps ...*Step) *Wizard {
-	iSteps := make([]orchestratorStep, len(steps))
-	for i, s := range steps {
-		iSteps[i] = s
+// New creates a wizard from modules that provide steps.
+func New(onComplete func(ctx *context.Context), modules ...Module) *Wizard {
+	var iSteps []orchestratorStep
+	for _, mod := range modules {
+		for _, s := range mod.GetSteps() {
+			if step, ok := s.(orchestratorStep); ok {
+				iSteps = append(iSteps, step)
+			}
+		}
 	}
+
 	w := &Wizard{
 		log:            func(...any) {},
 		ctx:            context.Background(),
@@ -64,7 +69,7 @@ func (w *Wizard) initCurrentStep() {
 		w.currentValue = "Wizard completed successfully."
 
 		if w.onComplete != nil {
-			w.onComplete()
+			w.onComplete(w.ctx)
 			w.onComplete = nil
 		}
 		return

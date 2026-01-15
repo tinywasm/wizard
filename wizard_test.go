@@ -7,9 +7,23 @@ import (
 	"github.com/tinywasm/fmt"
 )
 
+type MockModule struct {
+	name  string
+	steps []*Step
+}
+
+func (m *MockModule) Name() string { return m.name }
+func (m *MockModule) GetSteps() []any {
+	res := make([]any, len(m.steps))
+	for i, s := range m.steps {
+		res[i] = s
+	}
+	return res
+}
+
 func TestWizardFlow(t *testing.T) {
 	completed := false
-	onComplete := func() { completed = true }
+	onComplete := func(ctx *context.Context) { completed = true }
 
 	step1 := &Step{
 		LabelText: "Project Name",
@@ -29,7 +43,8 @@ func TestWizardFlow(t *testing.T) {
 		},
 	}
 
-	w := New(onComplete, step1, step2)
+	mod := &MockModule{name: "Test", steps: []*Step{step1, step2}}
+	w := New(onComplete, mod)
 
 	// Verification 1: Initial state
 	if w.Label() != "Project Name" {
@@ -87,7 +102,8 @@ func TestWizardErrorFlow(t *testing.T) {
 		},
 	}
 
-	w := New(nil, step1, step2)
+	mod := &MockModule{name: "ErrorTest", steps: []*Step{step1, step2}}
+	w := New(nil, mod)
 
 	// 1. Test Error = stay on step
 	w.Change("trigger crash")
