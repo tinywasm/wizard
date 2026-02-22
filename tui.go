@@ -35,10 +35,24 @@ func (w *Wizard) Change(newValue string) {
 // Loggable implementation
 func (w *Wizard) SetLog(f func(message ...any)) {
 	w.log = f
+	w.hasRealLogger = true
 }
 
 // StreamingLoggable implementation
 func (w *Wizard) AlwaysShowAllLogs() bool { return true }
+
+// TabAware implementation
+func (w *Wizard) OnTabActive() {
+	// Let the wizard intercept TabAware so it can manually trigger
+	// the OnShow hook of the current step when the tab becomes active.
+	w.showCurrentStep()
+
+	for _, item := range w.items {
+		if aware, ok := item.(interface{ OnTabActive() }); ok {
+			aware.OnTabActive()
+		}
+	}
+}
 
 // Cancelable implementation
 func (w *Wizard) Cancel() {
