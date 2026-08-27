@@ -9,6 +9,11 @@ type Step struct {
 	DefaultFn func(ctx *context.Context) string
 	OnInputFn func(input string, ctx *context.Context) (continueFlow bool, err error)
 	OnShowFn  func(log func(message ...any))
+	// Sensitive marks this step's collected value as a secret: the wizard
+	// never logs the raw input for this step, and any consumer that checks
+	// Wizard.Sensitive() (e.g. tinywasm/devtui, via tui.Sensitive) masks it
+	// on screen while it is being typed.
+	Sensitive bool
 }
 
 // Label returns the prompt text for the UI.
@@ -38,3 +43,8 @@ func (s *Step) OnShow(log func(message ...any)) {
 		s.OnShowFn(log)
 	}
 }
+
+// IsSensitive reports Sensitive. A method, not the field itself, because
+// orchestratorStep needs it and a Go type cannot have a field and a method
+// share one name.
+func (s *Step) IsSensitive() bool { return s.Sensitive }

@@ -7,6 +7,13 @@ func (w *Wizard) Label() string        { return w.label }
 func (w *Wizard) Value() string        { return w.currentValue }
 func (w *Wizard) WaitingForUser() bool { return w.waitingForUser }
 
+func (w *Wizard) Sensitive() bool {
+	if w.currentStepIdx >= len(w.steps) {
+		return false // wizard finished, no current step to be sensitive about
+	}
+	return w.steps[w.currentStepIdx].IsSensitive()
+}
+
 func (w *Wizard) Change(newValue string) {
 	if w.currentStepIdx >= len(w.steps) {
 		return
@@ -24,8 +31,14 @@ func (w *Wizard) Change(newValue string) {
 		return
 	}
 
-	// Before advancing, log the user's input to preserve history
-	w.log("✓ " + w.label + ": " + newValue)
+	// Before advancing, log the user's input to preserve history — except the
+	// raw value of a sensitive step, which must never reach the log (it
+	// streams over SSE, see tinywasm/devtui GET /logs).
+	confirmed := newValue
+	if step.IsSensitive() {
+		confirmed = "••••••••"
+	}
+	w.log("✓ " + w.label + ": " + confirmed)
 
 	// Move to next step
 	w.currentStepIdx++

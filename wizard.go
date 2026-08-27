@@ -11,6 +11,7 @@ type orchestratorStep interface {
 	DefaultValue(ctx *context.Context) string
 	OnInput(input string, ctx *context.Context) (bool, error)
 	OnShow(log func(message ...any))
+	IsSensitive() bool
 }
 
 // Wizard orchestrates the execution of multiple Steps.
