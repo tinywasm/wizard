@@ -1,8 +1,8 @@
-module github.com/tinywasm/wizard
+module webtyp.com/wizard
 
 go 1.25.2
 
 require (
-	github.com/tinywasm/context v0.0.11
-	github.com/tinywasm/fmt v0.25.7
+	webtyp.com/context v0.0.11
+	webtyp.com/fmt v0.25.7
 )

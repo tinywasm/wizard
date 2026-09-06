@@ -1,7 +1,7 @@
 package wizard
 
 import (
-	"github.com/tinywasm/context"
+	"webtyp.com/context"
 )
 
 // orchestratorStep is the internal interface used by the Wizard.

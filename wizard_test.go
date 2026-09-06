@@ -3,8 +3,8 @@ package wizard
 import (
 	"testing"
 
-	"github.com/tinywasm/context"
-	"github.com/tinywasm/fmt"
+	"webtyp.com/context"
+	"webtyp.com/fmt"
 )
 
 type MockModule struct {

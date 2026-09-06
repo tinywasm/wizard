@@ -1,6 +1,6 @@
 package wizard
 
-import "github.com/tinywasm/context"
+import "webtyp.com/context"
 
 // Step represents a single interaction or execution unit in the wizard.
 // It is designed to be used as a literal for easy instantiation.
@@ -11,7 +11,7 @@ type Step struct {
 	OnShowFn  func(log func(message ...any))
 	// Sensitive marks this step's collected value as a secret: the wizard
 	// never logs the raw input for this step, and any consumer that checks
-	// Wizard.Sensitive() (e.g. tinywasm/devtui, via tui.Sensitive) masks it
+	// Wizard.Sensitive() (e.g. webtyp/devtui, via tui.Sensitive) masks it
 	// on screen while it is being typed.
 	Sensitive bool
 }

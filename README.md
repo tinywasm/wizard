@@ -1,10 +1,10 @@
-# tinywasm/wizard
+# webtyp/wizard
 <img src="docs/img/badges.svg">
 
 A modular, pluggable wizard orchestrator for TinyGo applications.
 
 ## LLM Context / Core Logic
-The library orchestrates a sequence of `Step` struct helpers. It manages state via a **mutable** `tinywasm/context`.
+The library orchestrates a sequence of `Step` struct helpers. It manages state via a **mutable** `webtyp/context`.
 
 ### Steps
 ```go

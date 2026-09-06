@@ -33,7 +33,7 @@ func (w *Wizard) Change(newValue string) {
 
 	// Before advancing, log the user's input to preserve history — except the
 	// raw value of a sensitive step, which must never reach the log (it
-	// streams over SSE, see tinywasm/devtui GET /logs).
+	// streams over SSE, see webtyp/devtui GET /logs).
 	confirmed := newValue
 	if step.IsSensitive() {
 		confirmed = "••••••••"

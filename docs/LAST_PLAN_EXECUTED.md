@@ -8,25 +8,25 @@ REVIEWER: none
 
 # Plan — masked steps
 
-## Part of a multi-repo wave — depends on `tinywasm/tui` publishing first
+## Part of a multi-repo wave — depends on `webtyp/tui` publishing first
 
 This is one piece of `KEYRING_DOTENV_MASTER_PLAN.md` (orchestrator:
-`github.com/tinywasm/app-releases`, `docs/KEYRING_DOTENV_MASTER_PLAN.md`).
+`webtyp.com/app-releases`, `docs/KEYRING_DOTENV_MASTER_PLAN.md`).
 
-**Do not dispatch this plan until `github.com/tinywasm/tui` has published the
+**Do not dispatch this plan until `webtyp.com/tui` has published the
 `Sensitive` interface** (its own `docs/PLAN.md` in the same wave). This plan
 does not need to `go get` that new version — see "Why no new dependency"
 below — but it exists to satisfy that interface, so verify on
-`https://pkg.go.dev/github.com/tinywasm/tui` (or `go list -m -versions
-github.com/tinywasm/tui`) that a version with `type Sensitive interface {
+`https://pkg.go.dev/webtyp.com/tui` (or `go list -m -versions
+webtyp.com/tui`) that a version with `type Sensitive interface {
 Sensitive() bool }` exists before starting.
 
 ## Why
 
-`tinywasm/app` needs an interactive wizard step that collects a secret (a
-credential to store in `tinywasm/keyring`) without ever showing it on screen
+`webtyp/app` needs an interactive wizard step that collects a secret (a
+credential to store in `webtyp/keyring`) without ever showing it on screen
 or writing it into the TUI's log — that log streams over SSE
-(`tinywasm/devtui`'s `GET /logs`, also read by `tinywasm/app`'s MCP tool
+(`webtyp/devtui`'s `GET /logs`, also read by `webtyp/app`'s MCP tool
 `app_get_logs`), so anything logged in plaintext leaves the machine.
 
 Today `Wizard.Change` (in [`tui.go`](tui.go)) always logs the raw input after
@@ -43,7 +43,7 @@ that for every step, not just a future secret one — any step can opt in.
 
 `*Wizard` already satisfies `tui.HandlerInteractive` (`Name`/`Label`/`Value`/
 `Change`/`WaitingForUser`, see the "Handler Interface" comment atop
-[`tui.go`](tui.go)) **without ever importing `github.com/tinywasm/tui`** —
+[`tui.go`](tui.go)) **without ever importing `webtyp.com/tui`** —
 Go interfaces are structural, so this repo just names the same methods. Adding
 `Sensitive() bool` to `*Wizard` is the same trick: it makes `*Wizard` also
 satisfy `tui.Sensitive` for any caller that imports that package (`devtui`
@@ -63,7 +63,7 @@ type Step struct {
 	OnShowFn  func(log func(message ...any))
 	// Sensitive marks this step's collected value as a secret: the wizard
 	// never logs the raw input for this step, and any consumer that checks
-	// Wizard.Sensitive() (e.g. tinywasm/devtui, via tui.Sensitive) masks it
+	// Wizard.Sensitive() (e.g. webtyp/devtui, via tui.Sensitive) masks it
 	// on screen while it is being typed.
 	Sensitive bool
 }
@@ -119,7 +119,7 @@ with:
 ```go
 	// Before advancing, log the user's input to preserve history — except the
 	// raw value of a sensitive step, which must never reach the log (it
-	// streams over SSE, see tinywasm/devtui GET /logs).
+	// streams over SSE, see webtyp/devtui GET /logs).
 	confirmed := newValue
 	if step.IsSensitive() {
 		confirmed = "••••••••"
@@ -135,12 +135,12 @@ w.steps[w.currentStepIdx]`) — no new lookup needed.
 - **Do not** add a `Sensitive` parameter to `wizard.New` or `Wizard` itself —
   sensitivity is per-step (a wizard can mix ordinary and secret steps), never
   a whole-wizard setting.
-- **Do not** import `github.com/tinywasm/tui` in this repo to "make it
+- **Do not** import `webtyp.com/tui` in this repo to "make it
   official" — see "Why no new dependency" above; the structural match is the
   existing, deliberate pattern in this package.
 - `OnShowFn` is untouched — only the auto-log line in `Change` is masked.
   If a step's own `OnShowFn` or `OnInputFn` logs the value itself, that is
-  outside this plan's control (`tinywasm/app`'s secret step, in the plan that
+  outside this plan's control (`webtyp/app`'s secret step, in the plan that
   consumes this one, must not do that either — noted there, not here).
 
 ## Tests
@@ -173,7 +173,7 @@ log-content tests, call `w.SetLog(func(msgs ...any) { ... capture into a
 
 ## Out of scope
 
-The actual secret-collecting `Step` that calls into `tinywasm/keyring` is
-`tinywasm/app`'s plan in this same wave, dispatched after this one and after
-`tinywasm/keyring` publish. Do not add any keyring-aware code here — this
-repo has no dependency on `tinywasm/keyring` and should not gain one.
+The actual secret-collecting `Step` that calls into `webtyp/keyring` is
+`webtyp/app`'s plan in this same wave, dispatched after this one and after
+`webtyp/keyring` publish. Do not add any keyring-aware code here — this
+repo has no dependency on `webtyp/keyring` and should not gain one.

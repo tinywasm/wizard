@@ -6,7 +6,7 @@ import (
 
 	stdFmt "fmt"
 
-	"github.com/tinywasm/context"
+	"webtyp.com/context"
 )
 
 func TestStepIsSensitiveDefaultFalse(t *testing.T) {
